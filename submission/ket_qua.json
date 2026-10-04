@@ -1,0 +1,85 @@
+{
+  "progress": {
+    "box_iou": "ok",
+    "nms": "ok",
+    "batched_nms": "ok",
+    "average_precision": "ok",
+    "mask_iou": "ok",
+    "polygon_to_mask": "ok",
+    "mask_to_yolo_seg": "ok",
+    "autolabel": "ok",
+    "oks": "ok",
+    "joint_angle": "ok",
+    "FLIP_IDX": "ok"
+  },
+  "latency": [
+    {
+      "Cấu hình": "one-to-many + NMS, conf 0.25",
+      "preprocess (ms)": 3.24,
+      "inference (ms)": 24.49,
+      "postprocess (ms)": 2.55,
+      "số box": 5
+    },
+    {
+      "Cấu hình": "one-to-many + NMS, conf 0.001",
+      "preprocess (ms)": 4.57,
+      "inference (ms)": 25.14,
+      "postprocess (ms)": 3.23,
+      "số box": 203
+    },
+    {
+      "Cấu hình": "one-to-one NMS-free, conf 0.25",
+      "preprocess (ms)": 2.92,
+      "inference (ms)": 19.98,
+      "postprocess (ms)": 0.95,
+      "số box": 5
+    },
+    {
+      "Cấu hình": "one-to-one NMS-free, conf 0.001",
+      "preprocess (ms)": 3.91,
+      "inference (ms)": 25.99,
+      "postprocess (ms)": 1.14,
+      "số box": 204
+    }
+  ],
+  "result_4b": {
+    "flip_idx": "giải phẫu",
+    "epochs": 40,
+    "imgsz": 640,
+    "Box mAP50-95": 0.9303488492063492,
+    "Pose mAP50": 0.995,
+    "Pose mAP50-95": 0.4573462529843696,
+    "train (phút)": 4.6
+  },
+  "result_4c": [
+    {
+      "Model": "flip_idx giải phẫu",
+      "Pose mAP50-95 — val gốc": 0.4573462529843696,
+      "Pose mAP50-95 — val lật gương": 0.43884777970456634
+    },
+    {
+      "Model": "flip_idx đồng nhất",
+      "Pose mAP50-95 — val gốc": 0.4169217121481716,
+      "Pose mAP50-95 — val lật gương": 0.29772304416546624
+    }
+  ],
+  "answers": {
+    "Q1": "(a) bus.jpg sau khi letterbox về  640×480 sẽ có 6300 dự đoán thô. Con số  này ít hơn vì khi giảm chiều rộng từ \n640 xuống 480, số  grid cells cả 3 tầng feature đều giảm theo tỉ lệ này: (80x60) + (40x30) + (20x15) = 6300 dự đoán thô.\n\n(b) Nhãn gốc ở quy ước `xywh` nhưng đã bị đọc nhầm theo quy ước `cxcywh`. Điều này làm cho góc trên - trái \nban đầu bị hiểu nhầm là tâm của box, dẫn đến việc box bị dịch chuyển lệch sang phải một khoảng bằng nửa \nchiều rộng (w/2) và dịch xuống dưới một khoảng bằng nửa chiều cao (h/2).",
+    "Q2": "1. Cột thay đổi nhiều nhất: postprocess ở mức conf = 0.001.\n\n2. Giải thích:\n- Khi conf thấp / cảnh đông: Số lượng bounding box thô tăng vọt. Thuật toán NMS phải tính toán IoU chéo giữa tất cả\ncác box với nhau tạo ra bottleneck cực lớn. NMS-free loại bỏ hoàn toàn bước này nên tốc độ xử lý gần như không đổi.\n- Trên CPU/NPU biên: NMS là thuật toán xử lý tuần tự, cực kỳ khó song song hóa. NMS-free giúp giảm tải tối đa cho \ncác chip xử lý biên vốn có băng thông yếu.",
+    "Q3": "(a) Với NMS ngưỡng 0.7: Một trong hai người công nhân có IoU 0.75 > 0.7 sẽ bị lọc mất.\n- Nếu tăng ngưỡng vd 0.8: Giảm bỏ sót người đứng sát nhau (giảm FN), nhưng dễ bị lặp box cho cùng một đối tượng (tăng FP).\n- Nếu giảm ngưỡng vd 0.5: Tránh được lặp box (giảm FP), nhưng chắc chắn sẽ lọc mất những người đứng đè lên nhau (tăng FN).\n\n(b) YOLO26 vẫn train head one-to-many vì cung cấp tín hiệu giám sát học tập dày đặc, phong phú giúp backbone học trích \nxuất đặc trưng tốt hơn rất nhiều. Head one-to-one sau đó được hưởng lợi từ các đặc trưng chất lượng này để đạt độ chính xác\ncao mà không cần NMS.",
+    "Q4": "(a) Nguyên nhân đếm sai vùng liên thông:\n- Thiếu: Hai người đứng sát/chồng lên nhau sẽ bị dính lại thành một vùng liên thông duy nhất (under-counting).\n- Thừa: Một người bị vật cản che ở giữa sẽ bị chia thành hai hay nhiều vùng rời rạc (over-counting).\n- Khắc phục: Panoptic Segmentation gán ID thực thể riêng biệt cho từng pixel thuộc các lớp đối tượng đếm được, \ntách rời hoàn toàn các vật thể dính nhau.\n\n(b) Xe buýt được gán lớp:\n- Gán nhầm thành lớp 'car' hoặc 'truck' vì xe buýt có kích thước lớn, hình dáng chung là khối hộp kim loại di\nchuyển trên đường rất tương đồng với xe tải lớn hoặc ô tô khi chỉ nhìn ở cấp độ cục bộ pixel thô.",
+    "Q5": "(a) Sự khác biệt về biên mask thô ở các kích thước vật thể:\n- Ở vật thể  lớn: Mask R-CNN sẽ cho biên mask thô và mờ hơn vì nó ép buộc phân giải bất kỳ RoI nào về  một kích thước \ncố định là 28×28, sau đó mới upscale lên kích thước thật. YOLO-seg giữ được biên sắc nét hơn vì nó kết hợp tuyến tính \ncác prototype toàn ảnh vốn có độ phân giải cao hơn.\n- Ở vật thể  nhỏ: Mask R-CNN lại cho biên chi tiết tốt hơn vì việc focus mạng con vào riêng một RoI nhỏ giúp bảo toàn \ncấu trúc tinh tế. YOLO-seg có thể gặp hiện tượng nhiễu hoặc mất chi tiết do các hệ số tuyến tính khó biểu diễn các vật \nthể quá nhỏ trên bản đồ prototype chung.\n\n(b) Điểm yếu của phương pháp lấy IoU lớn nhất:\n- Nếu thay bằng gán tham lam, hệ thống sẽ gặp lỗi khi một mask của mô hình này đè lên và có IoU cao nhất với nhiều mask \ncủa mô hình kia (vd: một mask xe buýt bao trùm có thể giành lấy IoU lớn nhất với nhiều người đứng bên cạnh). \n- Hungarian matching giải quyết tối ưu hóa toàn cục đảm bảo mỗi thực thể chỉ được ghép cặp 1-1 duy nhất mà không bị trùng \nlặp hay tranh chấp.",
+    "Q6": "(a) Kết quả prompt của điểm A và điểm B:\n- Điểm A: SAM nhận diện chính xác toàn bộ cơ thể người và cho ra một mask đầy đủ, có IoU rất cao so với mask tạo từ box.\n- Điểm B: SAM bị giới hạn phân vùng cục bộ và chỉ tô riêng phần chiếc giày/ống quần, dẫn đến một mask rất nhỏ và IoU \ngần như bằng 0 so với toàn bộ cơ thể.\n- Khi gán nhãn tự động, prompt bằng BOX an toàn hơn nhiều vì box cung cấp ranh giới không gian rõ ràng, ép SAM phải \ntập trung phân tách thực thể bên trong vùng giới hạn đó, tránh hiện tượng mơ hồ về  ambiguity như khi dùng 1 điểm.\n\n(b) Khi nào nên dùng:\n- Dùng SAM trực tiếp khi triển khai hệ thống cần tính đa dụng cao trên các đối tượng chưa biết trước hoặc tần suất xử \nlý thấp/không yêu cầu thời gian thực vì SAM có Image Encoder rất nặng.\n- Chỉ dùng SAM để  tạo nhãn rồi train YOLO26-seg khi cần triển khai hệ thống chạy thời gian thực trên các thiết bị \nphần cứng giới hạn với tập lớp đối tượng mục tiêu đã được xác định cố định trước.",
+    "Q7": "- Khi đầu gối và mắt cá chân nằm ngoài khung hình, Keypoint R-CNN vẫn cố gắng vẽ chúng ở mép dưới cùng của ảnh\ndo cơ chế giải mã heatmap bằng argmax: Mạng dự đoán heatmap cho từng keypoint, và phép toán argmax luôn trả \nvề tọa độ có giá trị kích hoạt lớn nhất trên bản đồ  đó, ngay cả khi mọi vị trí đều có xác suất cực kỳ thấp.\n\n- Điều này chứng minh rằng việc dự đoán tọa độ mà không có thông tin ngữ cảnh về  sự hiện diện sẽ dẫn đến các \nkeypoint ảo bị kéo về  rìa ảnh hoặc các vùng nhiễu.\n\n- Do đó mỗi keypoint bắt buộc phải đi kèm một điểm tin cậy để  hệ thống biết khi nào nên lọc bỏ những điểm bị \nche khuất hoặc nằm ngoài khung hình, tránh làm sai lệch luật nghiệp vụ ở các bước xử  lý sau.",
+    "Q8": "- Nhìn vào đồ thị bên trái, sai số khoảng 6 pixel thì OKS của người có kích thước nhỏ đã rơi xuống dưới 0.5. \nTrong khi người có kích thước lớn, sai số phải lên tới khoảng 30 pixel mới làm OKS rơi xuống dưới mức 0.5 này.\n\n- Chỉ số sigma của mắt (0.025) nhỏ hơn hông (0.107) nhiều lần vì trong thực tế  mắt là bộ phận nhỏ, cố định \nvà có độ lệch định vị giữa những người gắn nhãn rất thấp, đòi hỏi độ chính xác cực kỳ khắt khe. Ngược lại, hông \nlà vùng khớp lớn, linh hoạt nên độ lệch khi gắn nhãn của con người lớn hơn nhiều.\n\n- Với camera cổng gắn trên cao, sai số  vài pixel của mắt sẽ bị phạt cực kỳ nặng và dễ  kéo tụt mAP tổng thể. \nNghĩa là khi triển khai camera giám sát từ xa/trên cao, chúng ta không nên đặt quá nhiều kỳ vọng vào các keypoint nhỏ \nmà nên tập trung luật nghiệp vụ vào các khớp lớn, dễ  nhận diện ổn định như vai, hông, đầu gối.",
+    "Q9": "(a)\n- Báo nhầm: Khi người đang cúi người sâu để  bê đồ vật nặng hoặc đang ngồi bệt làm việc trên sàn. Lúc này thân người \nvẫn rất nghiêng nhưng họ không hề  bị ngã.\n- Bỏ sót: Khi người bị ngã nhưng cơ thể lại bị chắn/che khuất một phần, vd tư thế ngã co quắp bó tròn người lại khiến \nthuật toán không thể  định vị chính xác hông và vai để  tính toán góc thẳng đứng.\n\n(b) Ảnh xoay counter-clockwise 90° mô phỏng việc camera bị thay đổi góc nhìn vật lý hoặc tư thế đổ rạp hẳn của đối tượng. \nModel YOLO-pose được huấn luyện chủ yếu với dữ liệu người đứng thẳng. Do thiếu tính bất biến xoay trong tập dữ liệu huấn \nluyện, mạng trích xuất đặc trưng của YOLO sẽ không nhận diện được các đặc trưng quen thuộc khi họ bị xoay ngang dẫn đến \nbỏ sót nhiều đối tượng hơn.\n\n(c) Một hệ thống cảnh báo ngã thực tế cần thêm:\n- Phân tích chuỗi hành động theo thời gian: Phải theo dõi chuyển động qua nhiều khung hình liên tiếp để  phát hiện sự \nthay đổi đột ngột từ trạng thái đứng sang trạng thái nằm/ngã thay vì chỉ phân tích ảnh tĩnh đơn lẻ.\n- Phân tích vận tốc chuyển động: Đo tốc độ dịch chuyển của các keypoint (như đầu hoặc vai) xem có vượt ngưỡng rơi tự do hay không.\n- Phân tích thời gian bất động: Đo xem sau khi nghiêng/nằm xuống, đối tượng có nằm bất động trong khoảng thời gian đủ \nlâu (vd > 5 giây) để  loại trừ các hành động nằm/cúi chủ động thông thường.",
+    "Q10": "- Do tập validation gốc của chúng ta 100% con hổ  đều quay mặt sang phải, nên nếu giữ `flip_idx` đồng nhất, chỉ số mAP \ntrên tập val này sẽ không bị giảm. Tập val này bị thiên lệch cực kỳ nghiêm trọng nên đã che giấu hoàn toàn lỗi cài đặt này.\n\n- Khi triển khai thực tế, đây sẽ trở thành một lỗi cực kỳ nghiêm trọng khi xuất hiện những con hổ  di chuyển quay mặt \nsang trái. Model sẽ nhận diện sai hoàn toàn chân trái thành chân phải và ngược lại, gây hỏng toàn bộ các luật nghiệp vụ \nphân tích tư thế  hay hướng di chuyển của vật thể.",
+    "Q11": "1. Lỗi hoán đổi/nhầm lẫn đối xứng trái-phải ở các chi:\n- Biểu hiện: Các điểm bàn chân và cổ chân bị gán chéo từ chân trái sang chân phải hoặc ngược lại ở các góc nghiêng \nche khuất, thể  hiện qua sai số  cực lớn trên biểu đồ  cột của left_hind_paw và right_front_paw.\n- Khắc phục: Tăng cường các phép biến đổi không gian như crop/translate và kích hoạt tính năng lật ảnh gương ngẫu \nnhiên fliplr kết hợp cấu hình mảng FLIP_IDX giải phẫu chính xác.\n\n2. Lỗi che khuất một phần và mất ranh giới thị giác rõ ràng:\n- Biểu hiện: Sai số  định vị rất cao ở các đầu chi như right_front_paw khi hổ  di chuyển qua vùng cỏ rậm rạp làm che khuất bàn chân.\n- Khắc phục: Bổ sung thêm các ảnh mẫu chứa vật cản che khuất vào tập huấn luyện hoặc sử dụng nhánh dự đoán visibility \nscore để  chủ động loại bỏ các điểm đoán mò thiếu tin cậy.",
+    "Q12": "1. Không hợp lý. Các bộ phận nhỏ, có đặc trưng hình học sắc nét như mắt hay mũi yêu cầu độ chính xác định vị \nrất khắt khe nên phải có sigma nhỏ. Ngược lại, các khớp lớn linh hoạt và hay bị che khuất như bàn chân có độ \nbiến động nhãn rất cao nên cần gán sigma lớn hơn.\n\n2. Phương pháp ước lượng bộ thông số sigma cho một dataset custom:\n- Cho nhiều chuyên gia tiến hành gán nhãn độc lập trên cùng một tập ảnh mẫu khoảng 100-200 tấm.\n- Tính khoảng cách Euclidean từ tọa độ gán nhãn của từng người đến tọa độ trung vị thực tế cho từng keypoint.\n- Chuẩn hóa khoảng cách này theo kích thước bounding box của đối tượng và tính độ lệch chuẩn để thu được giá trị \nsigma thực tế cho từng bộ phận."
+  },
+  "env": {
+    "device": "cuda",
+    "torch": "2.11.0+cu130",
+    "ultralytics": "8.4.171"
+  }
+}
